@@ -1,0 +1,7 @@
+*.png
+*.zip
+*.weights
+*.pth
+output/
+data/
+
