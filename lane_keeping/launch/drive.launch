@@ -1,0 +1,8 @@
+<launch>
+
+  <include file="$(find xycar_motor)/launch/xycar_motor.launch" />
+
+  <node name="Lane_Keeping_System" pkg="lane_keeping" type="lane_keeping_node" output="screen"/>
+  <param name="config_path" type="str" value="$(find lane_keeping)/config/config.yaml"/>
+
+</launch>
