@@ -16,7 +16,7 @@ class Yolodata(Dataset):
     train_txt = "all.txt"
     valid_dir = "/yolov3-pytorch/data/tstl_eval"
     valid_txt = "all.txt"
-    class_str = ['left', 'right', 'stop', 'crosswalk', 'uturn', 'traffic_light']
+    class_str = ['left', 'right', 'stop', 'crosswalk', 'traffic_light']
     num_class = None
     img_data = []
     def __init__(self, is_train=True, transform=None, cfg_param=None):
