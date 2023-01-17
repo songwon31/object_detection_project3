@@ -28,7 +28,7 @@ def mask(img_path, img_name, box_path):
         for l in lines:
             _l = l.replace('\n','')
             box_data = _l.split(" ")
-            if box_data[0] == '6':
+            if box_data[0] == '5':
                 mask_box += [[float(b) for b in box_data[1:]]]
             else:
                 normal_box += [l]
