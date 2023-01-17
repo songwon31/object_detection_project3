@@ -13,7 +13,8 @@ LaneKeepingSystem::LaneKeepingSystem()
   hough_transform_lane_detector_ptr_ = new HoughTransformLaneDetector(config);
   setParams(config);
   pub_ = nh_.advertise<xycar_msgs::xycar_motor>(pub_topic_name_, queue_size_);
-  sub_ = nh_.subscribe(sub_topic_name_, queue_size_, &LaneKeepingSystem::imageCallback, this);
+  image_sub_ = nh_.subscribe(sub_topic_name_, queue_size_, &LaneKeepingSystem::imageCallback, this);
+  detection_sub_ = nh.subscribe("/yolov3_trt_ros/detections", queue_size_, &LaneKeepingSystem::detectionCallback, this);
 }
 
 void LaneKeepingSystem::setParams(const YAML::Node& config)
@@ -54,7 +55,81 @@ void LaneKeepingSystem::run()
       continue;
     }
 
+    if (object_id >= 0) 
+    {
+      if (object_id == 0)
+      {
+        drive_left_right("left", 2.5);
+      }
+      else if (obejct_id == 1)
+      {
+        drive_left_right("right", 2.5);
+      }
+    }
+    else
+    {
+      drive_normal();
+    }
+
+    object_id = -1;
+  }
+}
+
+void LaneKeepingSystem::imageCallback(const sensor_msgs::Image& msg)
+{
+  cv::Mat src = cv::Mat(msg.height, msg.width, CV_8UC3, const_cast<uint8_t*>(&msg.data[0]), msg.step);
+  cv::cvtColor(src, frame_, cv::COLOR_RGB2BGR);
+}
+//////////////////////////////////////////////////////////////////////////////////////////////
+void LaneKeepingSystem::detectionCallback(const yolov3_trt_ros::BoundingBoxes& msg)
+{
+  for (auto& box : msg.bounding_boxes) {
+    std::cout << "Class ID: " << box.id << std::endl;
+    object_id = box.id;
+  }
+}
+
+void drive_normal()
+{
+  std::tie(lpos, rpos) = hough_transform_lane_detector_ptr_->getLanePosition(frame_);
+
+  ma_filter_ptr_->addSample((lpos + rpos) / 2);
+  ma_mpos = ma_filter_ptr_->getWeightedMovingAverage();
+  error = ma_mpos - frame_.cols / 2;
+  steering_angle = std::max(-(float)kXycarSteeringAngleLimit,
+                            std::min(pid_ptr_->getControlOutput(error), (float)kXycarSteeringAngleLimit));
+
+  pid_ptr_->getAngle(steering_angle);
+
+  speed_control(steering_angle);
+  drive(steering_angle);
+}
+
+void drive_left_right(std::string direction, float time) {
+  ros::spinOnce();
+  // Set the rate variable
+  ros::Rate rate(sleep_rate);
+
+  float max_cnt;
+  int cnt = 0;
+
+  if (time == 0) {  // time 0 means straight drive.
+    max_cnt = 1;
+  } else {
+    // Set the maximun number of iteration in while loop.
+    max_cnt = static_cast<float>(sleep_rate) * time;
+  }
+
+  while (static_cast<float>(cnt) < max_cnt) {
+    int lpos, rpos;
     std::tie(lpos, rpos) = hough_transform_lane_detector_ptr_->getLanePosition(frame_);
+
+    // Left or Right
+    if (direction == "left") {
+      rpos = lpos + 470;
+    } else if (direction == "right") {
+      lpos = rpos - 470;
+    }
 
     ma_filter_ptr_->addSample((lpos + rpos) / 2);
     ma_mpos = ma_filter_ptr_->getWeightedMovingAverage();
@@ -66,15 +141,12 @@ void LaneKeepingSystem::run()
 
     speed_control(steering_angle);
     drive(steering_angle);
+
+    cnt++;
+    rate.sleep();
   }
 }
-
-void LaneKeepingSystem::imageCallback(const sensor_msgs::Image& msg)
-{
-  cv::Mat src = cv::Mat(msg.height, msg.width, CV_8UC3, const_cast<uint8_t*>(&msg.data[0]), msg.step);
-  cv::cvtColor(src, frame_, cv::COLOR_RGB2BGR);
-}
-
+//////////////////////////////////////////////////////////////////////////////////////////////
 void LaneKeepingSystem::speed_control(float steering_angle)
 {
   float yaw = abs(steering_angle);

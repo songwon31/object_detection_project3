@@ -23,7 +23,7 @@ MOVING_AVERAGE_FILTER:
 TOPIC:
   PUB_NAME: /xycar_motor
   SUB_NAME: /usb_cam/image_raw/
-  QUEUE_SIZE: 1
+  QUEUE_SIZE: 10
 
 CANNY:
   LOW_THRESHOLD: 100

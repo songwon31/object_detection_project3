@@ -1,6 +1,8 @@
 #ifndef PID_CONTROLLER_H_
 #define PID_CONTROLLER_H_
 
+#include <stdint.h>
+
 namespace xycar
 {
 class PID final

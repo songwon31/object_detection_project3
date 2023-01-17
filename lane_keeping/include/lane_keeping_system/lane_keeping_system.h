@@ -11,6 +11,9 @@
 #include "lane_keeping_system/moving_average_filter.h"
 #include "lane_keeping_system/pid_controller.h"
 
+#include "yolov3_trt_ros/BoundingBox.h"
+#include "yolov3_trt_ros/BoundingBoxes.h"
+
 #include <unistd.h>
 
 namespace xycar
@@ -36,7 +39,12 @@ private:
 
   // Subcribe Image Topic
   void imageCallback(const sensor_msgs::Image& msg);
-  void lidarCallback(lidar_test::Obstacle object);
+
+  void detectionCallback(const yolov3_trt_ros::BoundingBoxes& msg);
+
+  void drive_normal();
+
+  void drive_left_right(std::string direction, float time);
 
   std::fstream outfile;
 
@@ -53,8 +61,8 @@ private:
   // ROS Variables
   ros::NodeHandle nh_;
   ros::Publisher pub_;
-  ros::Subscriber sub_;
-  ros::Subscriber object_sub_;
+  ros::Subscriber image_sub_;
+  ros::Subscriber detection_sub_;
   std::string pub_topic_name_;
   std::string sub_topic_name_;
   uint16_t queue_size_;
@@ -62,6 +70,11 @@ private:
 
   // OpenCV Image processing Variables
   cv::Mat frame_;
+
+  // Yolo Detection processing Variables
+  constexpr int sleep_rate = 12;
+  bool object_detected = false;
+  int object_id = -1;
 
   // Xycar Device variables
   float xycar_speed_;

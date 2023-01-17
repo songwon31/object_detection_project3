@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Copyright 1993-2019 NVIDIA Corporation.  All rights reserved.
 #
@@ -57,7 +57,7 @@ from PIL import Image,ImageDraw
 import rospy
 
 from std_msgs.msg import String
-from yolov3_trt.msg import BoundingBox, BoundingBoxes
+from yolov3_trt_ros.msg import BoundingBox, BoundingBoxes
 
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image as Imageros
