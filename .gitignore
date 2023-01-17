@@ -2,6 +2,7 @@
 *.zip
 *.weights
 *.pth
+*.pyc
 output/
 data/
 

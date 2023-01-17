@@ -12,9 +12,9 @@ class Yolodata(Dataset):
     file_dir = ""
     anno_dir = ""
     file_txt = ""
-    train_dir = "/yolov3-pytorch/data/tstl_data"
+    train_dir = "/home/ubuntu/team4/data/tstl_data"
     train_txt = "all.txt"
-    valid_dir = "/yolov3-pytorch/data/tstl_eval"
+    valid_dir = "/home/ubuntu/team4/data/tstl_eval"
     valid_txt = "all.txt"
     class_str = ['left', 'right', 'stop', 'crosswalk', 'traffic_light']
     num_class = None
