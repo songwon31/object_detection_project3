@@ -4,20 +4,20 @@
 #include <iostream>
 #include <vector>
 
-namespace xycar
-{
-class MovingAverageFilter final
-{
+namespace xycar {
+class MovingAverageFilter final {
 public:
   // Construct a new Moving Average Filter object
-  MovingAverageFilter(uint8_t sample_size);
+  MovingAverageFilter(int sample_size);
   // Add new data to filter
-  void addSample(uint16_t new_sample);
+  void addSample(int new_sample);
   // Get filtered data
   float getWeightedMovingAverage();
+  // Get filtered data
+  float getMovingAverage();
 
 private:
-  const uint8_t kSampleSize_;
+  const int kSampleSize_;
   std::deque<int> samples_;
   std::vector<int> weight_;
 };

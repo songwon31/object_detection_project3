@@ -1,22 +1,18 @@
 #ifndef PID_CONTROLLER_H_
 #define PID_CONTROLLER_H_
 
-#include <stdint.h>
-
-namespace xycar
-{
-class PID final
-{
+namespace xycar {
+class PID final {
 public:
   // Construct a new PID object
   PID(float p_gain, float i_gain, float d_gain);
   // Calculate PID control
-  float getControlOutput(int32_t error);
+  float getControlOutput(int error);
 
-  float getAngle(float angle);
+  float getAngle(float angle1);
 
 private:
-  float current_angle;
+  float angle;
   float p_gain_;
   float i_gain_;
   float d_gain_;

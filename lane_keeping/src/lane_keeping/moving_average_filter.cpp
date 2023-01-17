@@ -1,37 +1,37 @@
 #include "lane_keeping_system/moving_average_filter.h"
 
-namespace xycar
-{
-MovingAverageFilter::MovingAverageFilter(uint8_t sample_size) : kSampleSize_(sample_size)
-{
+namespace xycar {
+MovingAverageFilter::MovingAverageFilter(int sample_size)
+    : kSampleSize_(sample_size) {
   weight_.reserve(kSampleSize_);
-  for (uint32_t i = 1; i <= kSampleSize_; ++i)
-  {
+  for (int i = 1; i <= kSampleSize_; ++i) {
     weight_.push_back(i);
   }
 }
 
-void MovingAverageFilter::addSample(uint16_t new_sample)
-{
+void MovingAverageFilter::addSample(int new_sample) {
   samples_.push_back(new_sample);
-  if (samples_.size() > kSampleSize_)
-  {
+  if (samples_.size() > kSampleSize_) {
     samples_.pop_front();
   }
 }
 
-float MovingAverageFilter::getWeightedMovingAverage()
-{
-  uint16_t sum = 0;
-  uint16_t weight_sum = 0;
-  for (uint32_t i = 0; i < samples_.size(); ++i)
-  {
+float MovingAverageFilter::getMovingAverage() {
+  int sum = 0, sample_size = samples_.size();
+  for (int i = 0; i < sample_size; ++i) {
+    sum += samples_[i];
+  }
+  return (float)sum / sample_size;
+}
+
+float MovingAverageFilter::getWeightedMovingAverage() {
+  int sum = 0, weight_sum = 0;
+  for (int i = 0; i < samples_.size(); ++i) {
     sum += samples_[i] * weight_[i];
     weight_sum += weight_[i];
   }
-  if (weight_sum == 0)
-  {
-    throw std::runtime_error("Weight sum is zero");
+  if (weight_sum == 0) {
+   throw std::runtime_error("Weight sum is zero");
   }
   return (float)sum / weight_sum;
 }

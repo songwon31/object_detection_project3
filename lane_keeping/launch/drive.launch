@@ -1,5 +1,19 @@
 <launch>
 
+  <!--
+  <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+    <param name="video_device" value="/dev/videoCAM" />
+    <param name="image_width" value="640" />
+    <param name="image_height" value="480" />
+    <param name="pixel_format" value="yuyv" />
+    <param name="camera_frame_id" value="usb_cam" />
+    <param name="autoexposure" value="false" />
+    <param name="exposure" value="80" />
+    <param name="io_method" value="mmap"/>
+  </node>
+  -->
+  
+
   <include file="$(find xycar_motor)/launch/xycar_motor.launch" />
 
   <node name="Lane_Keeping_System" pkg="lane_keeping" type="lane_keeping_node" output="screen"/>

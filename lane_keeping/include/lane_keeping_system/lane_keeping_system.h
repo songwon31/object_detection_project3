@@ -16,10 +16,10 @@
 
 #include <unistd.h>
 
-namespace xycar
-{
-class LaneKeepingSystem
-{
+
+namespace xycar {
+
+class LaneKeepingSystem {
 public:
   // Construct a new Lane Keeping System object
   LaneKeepingSystem();
@@ -28,7 +28,7 @@ public:
   // Running Lane Keeping System Algorithm
   void run();
   // Set parameters from config file
-  void setParams(const YAML::Node& config);
+  void setParams(const YAML::Node &config);
 
 private:
   // Setting steering angle and speed
@@ -38,7 +38,10 @@ private:
   void drive(float steering_angle);
 
   // Subcribe Image Topic
-  void imageCallback(const sensor_msgs::Image& msg);
+  void imageCallback(const sensor_msgs::Image &msg);
+  void detectionCallback(const yolov3_trt_ros::BoundingBoxes& msg);
+  void drive_normal();
+  void drive_left_or_right(std::string direction, float time);
 
   std::fstream outfile;
 
@@ -46,20 +49,20 @@ private:
   // Xycar Steering Angle Limit
   static const int kXycarSteeringAngleLimit = 50;
   // PID Class for Control
-  PID* pid_ptr_;
+  PID *pid_ptr_;
   // Moving Average Filter Class for Noise filtering
-  MovingAverageFilter* ma_filter_ptr_;
+  MovingAverageFilter *ma_filter_ptr_;
   // Hough Transform Lane Detector Class for Lane Detection
-  HoughTransformLaneDetector* hough_transform_lane_detector_ptr_;
+  HoughTransformLaneDetector *hough_transform_lane_detector_ptr_;
 
   // ROS Variables
   ros::NodeHandle nh_;
   ros::Publisher pub_;
-  ros::Subscriber sub_;
-  ros::Subscriber object_sub_;
+  ros::Subscriber image_sub_;
+  ros::Subscriber detection_sub_;
   std::string pub_topic_name_;
   std::string sub_topic_name_;
-  uint16_t queue_size_;
+  int queue_size_;
   xycar_msgs::xycar_motor msg_;
 
   // OpenCV Image processing Variables
@@ -73,8 +76,15 @@ private:
   float acceleration_step_;
   float deceleration_step_;
 
+  int sleep_rate = 12;
+  int object_id = -1;
+
   // Debug Flag
   bool debug_;
+
+  cv::Mat p_frame1;
+  cv::Mat p_frame2;
+
 };
 }  // namespace xycar
 
