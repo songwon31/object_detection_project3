@@ -69,8 +69,8 @@ TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
 
 CFG = "/home/nvidia/xycar_ws/src/yolov3_trt_ros/src/yolov3-tiny_tstl_352.cfg"
 TRT = '/home/nvidia/xycar_ws/src/yolov3_trt_ros/src/model_epoch250.trt'
-NUM_CLASS = 6
-INPUT_IMG = '/home/nvidia/xycar_ws/src/yolov3_trt_ros/src/video1_2.png'
+NUM_CLASS = 5
+# INPUT_IMG = '/home/nvidia/xycar_ws/src/yolov3_trt_ros/src/video1_2.png'
 
 bridge = CvBridge()
 xycar_image = np.empty(shape=[0])
@@ -210,7 +210,21 @@ def parse_cfg_wh(cfg):
 
 def img_callback(data):
     global xycar_image
-    xycar_image = bridge.imgmsg_to_cv2(data, "bgr8")
+
+    image_a = np.frombuffer(data.data, dtype=np.uint8).reshape(data.height,data.width,-1)
+    image_b = cv2.normalize(image_a, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC3)
+    xycar_image = cv2.cvtColor(image_b, cv2.COLOR_BGR2RGB)
+
+    """
+    if data.encoding != "bgr8":
+        rospy.logerr("This Coral detect node has been hardcoded to 'bgr8' encoding.")
+    dtype = np.dtype("uint8")
+    dtype = dtype.newbyteorder('>' if data.is_bigendian else '<')
+    xycar_image = np.ndarray(shape=(data.height, data.width, 3), dtype=dtype, buffer=data.data)
+    if data.is_bigendian == (sys.byteorder == "little"):
+        xycar_image = xycar_image.byteswap().newbyteorder()
+    """
+    #xycar_image = bridge.imgmsg_to_cv2(data, "bgr8")
 
 def draw_bboxes(image_raw, bboxes, confidences, categories, all_categories, bbox_color='blue'):
     """Draw the bounding boxes on the original input image and return it.
