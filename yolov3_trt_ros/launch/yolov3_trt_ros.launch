@@ -16,8 +16,6 @@
   <!-- node name="trt_driver" pkg="yolov3_trt_ros" type="trt_drive.py" output="screen" /-->
 
   <!-- driver node -->
-  <!--
   <include file="$(find lane_keeping)/launch/drive.launch" />
-  -->
 
 </launch>

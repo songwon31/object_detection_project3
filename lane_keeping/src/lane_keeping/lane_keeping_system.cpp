@@ -41,6 +41,8 @@ LaneKeepingSystem::~LaneKeepingSystem()
 
 void LaneKeepingSystem::run()
 {
+  while (detection_sub_.getNumPublishers() == 0)
+  {}
   int lpos, rpos, error, ma_mpos, left_mpos, right_mpos;
   float steering_angle;
   ros::Rate rate(30);
@@ -61,6 +63,18 @@ void LaneKeepingSystem::run()
       else if (object_id == 1)
       {
         drive_left_or_right("right", 2.5);
+      }
+      else if (object_id == 2)
+      {
+        drive_stop();
+      }
+      else if (object_id == 3)
+      {
+        detect_cross_walk();
+      }
+      else if (object_id == 4)
+      {
+        detect_traffic_light();
       }
     }
     else
@@ -83,6 +97,10 @@ void LaneKeepingSystem::detectionCallback(const yolov3_trt_ros::BoundingBoxes& m
   for (auto& box : msg.bounding_boxes) {
     std::cout << "Class ID: " << box.id << std::endl;
     object_id = box.id;
+    box_xmin = box.xmin;
+    box_ymin = box.ymin;
+    box_xmax = box.xmax;
+    box_ymax = box.ymax;
   }
 }
 
@@ -150,6 +168,20 @@ void LaneKeepingSystem::drive_left_or_right(std::string direction, float time) {
   }
 }
 
+void LaneKeepingSystem::drive_stop()
+{
+
+}
+
+void LaneKeepingSystem::detect_cross_walk()
+{
+
+}
+
+void LaneKeepingSystem::detect_traffic_light()
+{
+  
+}
 
 void LaneKeepingSystem::speed_control(float steering_angle)
 {

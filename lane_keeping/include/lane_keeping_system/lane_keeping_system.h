@@ -6,6 +6,7 @@
 #include <sensor_msgs/Image.h>
 #include <xycar_msgs/xycar_motor.h>
 #include <yaml-cpp/yaml.h>
+#include <iostream>
 
 #include "lane_keeping_system/hough_transform_lane_detector.h"
 #include "lane_keeping_system/moving_average_filter.h"
@@ -42,6 +43,9 @@ private:
   void detectionCallback(const yolov3_trt_ros::BoundingBoxes& msg);
   void drive_normal();
   void drive_left_or_right(std::string direction, float time);
+  void drive_stop();
+  void detect_cross_walk();
+  void detect_traffic_light();
 
   std::fstream outfile;
 
@@ -78,6 +82,11 @@ private:
 
   int sleep_rate = 12;
   int object_id = -1;
+
+  int box_xmin = 0;
+  int box_ymin = 0;
+  int box_xmax = 0;
+  int box_ymax = 0;
 
   // Debug Flag
   bool debug_;
