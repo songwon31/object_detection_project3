@@ -168,6 +168,14 @@ void LaneKeepingSystem::drive_stop(float time)
   ros::spinOnce();
   ros::Rate rate(sleep_rate);
 
+  cv::Mat stop_line = frame_(cv::Rect(310, 360, 20, 10));
+  cv::cvtColor(stop_line, stop_line, cv::COLOR_BGR2GRAY);
+  cv::threshold(stop_line, stop_line, 200, 255, cv::THRESH_BINARY);
+  if (cv::mean(stop_line)[0] < 230) {
+    drive_normal();
+    return;
+  }
+
   float max_cnt;
   int cnt = 0;
 
