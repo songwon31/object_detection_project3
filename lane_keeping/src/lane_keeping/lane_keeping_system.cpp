@@ -58,23 +58,19 @@ void LaneKeepingSystem::run()
     {
       if (object_id == 0)
       {
-        drive_left_or_right("left", 2.5);
+        drive_left_or_right("left", 2.5f);
       }
       else if (object_id == 1)
       {
-        drive_left_or_right("right", 2.5);
+        drive_left_or_right("right", 2.5f);
       }
-      else if (object_id == 2)
+      else if (object_id == 2 || object_id == 3)
       {
-        drive_stop();
-      }
-      else if (object_id == 3)
-      {
-        detect_cross_walk();
+        drive_stop(6.0f);
       }
       else if (object_id == 4)
       {
-        detect_traffic_light();
+        detect_traffic_light(6.0f);
       }
     }
     else
@@ -130,7 +126,6 @@ void LaneKeepingSystem::drive_left_or_right(std::string direction, float time) {
 
   int lpos, rpos, error, ma_mpos, left_mpos, right_mpos;
   float steering_angle;
-
   float max_cnt;
   int cnt = 0;
 
@@ -168,19 +163,100 @@ void LaneKeepingSystem::drive_left_or_right(std::string direction, float time) {
   }
 }
 
-void LaneKeepingSystem::drive_stop()
+void LaneKeepingSystem::drive_stop(float time)
 {
+  ros::spinOnce();
+  ros::Rate rate(sleep_rate);
+
+  float max_cnt;
+  int cnt = 0;
+
+  if (time == 0) {
+    max_cnt = 1;
+  } else {
+    max_cnt = static_cast<float>(sleep_rate) * time;
+  }
+
+  while (static_cast<float>(cnt) < max_cnt) {
+    xycar_msgs::xycar_motor motor_msg;
+    motor_msg.angle = 0;
+    motor_msg.speed = 0;
+    pub_.publish(motor_msg);
+
+    cnt++;
+    rate.sleep();
+  }
+
+  max_cnt = static_cast<float>(sleep_rate) * 2.0f;
+  cnt = 0;
+  while (static_cast<float>(cnt) < max_cnt) {
+    drive_normal();
+    cnt++;
+    rate.sleep();
+  }
 
 }
 
-void LaneKeepingSystem::detect_cross_walk()
+void LaneKeepingSystem::detect_traffic_light(float time)
 {
+  cv::Mat traffic_light = frame_(cv::Range(box_xmin, box_xmax), cv::Range(box_ymin, box_ymax));
 
-}
+  // cv::Mat traffic_light_upside = frame_(cv::Range(box_xmin, box_xmax), cv::Range(box_ymin, box_ymin + (box_ymax -
+  // box_ymin) / 3)); cv::Mat traffic_light_downside = frame_(cv::Range(box_xmin, box_xmax), cv::Range(box_ymin +
+  // (box_ymax - box_ymin) *  2 / 3, box_ymax));
 
-void LaneKeepingSystem::detect_traffic_light()
-{
-  
+  // cv::Mat hsv_upside, hsv_downside;
+  // cv::cvtColor(traffic_light_upside, hsv_upside, cv::COLOR_BGR2HSV);
+
+  cv::Mat hsv;
+  cv::cvtColor(traffic_light, hsv, cv::COLOR_BGR2HSV);
+
+  std::vector<cv::Mat> planes;
+  cv::split(hsv, planes);
+
+  cv::Mat h= planes[0];
+  cv::Mat v = planes[2];
+
+  std::vector<cv::Vec3f> circles;
+  cv::HoughCircles(v, circles, cv::HOUGH_GRADIENT_ALT, 1.5, 10, 300, 0.9, 20, 50);
+
+  int max_idx(-1);
+  float max_val(0);
+  cv::Rect max_rect;
+
+  for (int i = 0; i < circles.size(); i++)
+  {
+    cv::Vec3i c = circles[i];
+
+    cv::Rect rect(c[0]-c[2], c[1]-c[2], c[2]*2, c[2]*2);
+
+    float mean_v = cv::mean(v(rect))[0];
+    if (mean_v > max_val)
+    {
+      max_idx = i;
+      max_val = mean_v;
+      max_rect = rect;
+    }
+  }
+
+  h += 30;
+
+  float mean_hue = cv::mean(h(max_rect))[0];
+  if(70 < mean_hue && mean_hue < 150)
+  {
+    drive_normal();
+  }
+  else if(0 < mean_hue && mean_hue < 60 )
+  {
+    xycar_msgs::xycar_motor motor_msg;
+    motor_msg.angle = 0;
+    motor_msg.speed = 0;
+    pub_.publish(motor_msg);
+  }
+  else 
+  {
+    drive_normal();
+  }
 }
 
 void LaneKeepingSystem::speed_control(float steering_angle)

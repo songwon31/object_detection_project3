@@ -2,11 +2,12 @@
 #define LANE_KEEPING_SYSTEM_H_
 
 #include <fstream>
+#include <iostream>
+#include <vector>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
 #include <xycar_msgs/xycar_motor.h>
 #include <yaml-cpp/yaml.h>
-#include <iostream>
 
 #include "lane_keeping_system/hough_transform_lane_detector.h"
 #include "lane_keeping_system/moving_average_filter.h"
@@ -43,9 +44,8 @@ private:
   void detectionCallback(const yolov3_trt_ros::BoundingBoxes& msg);
   void drive_normal();
   void drive_left_or_right(std::string direction, float time);
-  void drive_stop();
-  void detect_cross_walk();
-  void detect_traffic_light();
+  void drive_stop(float time);
+  void detect_traffic_light(float time);
 
   std::fstream outfile;
 
