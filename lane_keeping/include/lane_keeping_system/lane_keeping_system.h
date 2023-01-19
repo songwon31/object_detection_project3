@@ -45,7 +45,7 @@ private:
   void drive_normal();
   void drive_left_or_right(std::string direction, float time);
   void drive_stop(float time);
-  void detect_traffic_light(float time);
+  void traffic_sign_recognition();
 
   std::fstream outfile;
 
@@ -87,6 +87,9 @@ private:
   int box_ymin = 0;
   int box_xmax = 0;
   int box_ymax = 0;
+
+  int past_steering_angle = 0;
+  int past_speed = 0;
 
   // Debug Flag
   bool debug_;

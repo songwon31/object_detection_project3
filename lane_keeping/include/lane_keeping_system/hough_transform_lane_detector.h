@@ -18,6 +18,8 @@ public:
   // Draw rectagles on debug image
   void draw_rectangles(int lpos, int rpos, int ma_mpos);
 
+  void clearSample();
+  
   // Get debug image
   cv::Mat *getDebugFrame();
 

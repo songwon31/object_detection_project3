@@ -278,10 +278,7 @@ std::pair<int, int> HoughTransformLaneDetector::getLanePosition(
   int rpos = get_line_pos(all_lines, right_line_index, kRightLane);
 
   if (lpos == 0 && rpos == image_width_) {
-    l_samples_.clear();
-    r_samples_.clear();
-    left_mean = -2;
-    right_mean = -2;
+    clearSample();
   } else {
     addLSample(lpos);
     left_mean = getLWeightedMovingAverage();
@@ -295,6 +292,14 @@ std::pair<int, int> HoughTransformLaneDetector::getLanePosition(
   }
 
   return std::pair<int, int>(lpos, rpos);
+}
+
+void HoughTransformLaneDetector::clearSample()
+{
+  l_samples_.clear();
+  r_samples_.clear();
+  left_mean = -2;
+  right_mean = -2;
 }
 
 void HoughTransformLaneDetector::draw_lines(
