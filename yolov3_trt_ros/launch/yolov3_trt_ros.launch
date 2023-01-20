@@ -8,7 +8,7 @@
     <param name="pixel_format" value="yuyv" />
     <param name="camera_frame_id" value="usb_cam" />
     <param name="autoexposure" value="false" />
-    <param name="exposure" value="80" />
+    <param name="exposure" value="50" />
     <param name="io_method" value="mmap"/>
   </node>
 

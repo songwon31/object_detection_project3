@@ -172,25 +172,23 @@ HoughTransformLaneDetector::divideLines(const std::vector<cv::Vec4i> &lines) {
     }
     else
     {
-      
       if (slope < 0 &&
-        (left_mean == -2 || (left_mean != -1 && std::abs(left_mean - x_mean) < 80))) {
+        (left_mean == -2 || (left_mean != -1 && std::abs(left_mean - x_mean) < 50))) {
         left_line_x_sum += (float)(x1 + x2) * 0.5;
         left_line_index.push_back(i);
       } else if (0 < slope &&
-        (right_mean == -2 || (right_mean != -1 && std::abs(right_mean - x_mean) < 80))) {
+        (right_mean == -2 || (right_mean != -1 && std::abs(right_mean - x_mean) < 50))) {
         right_line_x_sum += (float)(x1 + x2) * 0.5;
         right_line_index.push_back(i);
       }
-      
     
-      /*
-      if (((slope < 0) || (slope > 0 && x2 < 100)) &&
-          (left_mean == -2 || (left_mean != -1 && std::abs(left_mean - x_mean) < 80) || (left_mean == -1 && x2 < 320))) {
+     /* 
+      if (((slope < 0) || (slope > 0 && x2 < 200)) &&
+          ((left_mean != -1 && std::abs(left_mean - x_mean) < 50) || (left_mean == -1 && x2 < 320))) {
           left_line_x_sum += (float)(x1 + x2) * 0.5;
           left_line_index.push_back(i);
-      } else if (((0 < slope && x1 > 100) || (slope < 0 && x1>540)) &&
-          (right_mean == -2 || (right_mean != -1 && std::abs(right_mean - x_mean) < 80) || (right_mean == -1 && x1 > 320))) {
+      } else if (((0 < slope && x1 > 200) || (slope < 0 && x1>280)) &&
+          ( (right_mean != -1 && std::abs(right_mean - x_mean) < 50) || (right_mean == -1 && x1 > 320))) {
           right_line_x_sum += (float)(x1 + x2) * 0.5;
           right_line_index.push_back(i);
       }
@@ -198,16 +196,17 @@ HoughTransformLaneDetector::divideLines(const std::vector<cv::Vec4i> &lines) {
       
       /*
       if (
-          (left_mean == -2 || (left_mean != -1 && std::abs(left_mean - x_mean) < 80) || (left_mean == -1 && x2 < 320))) {
+          ((left_mean == -2 && x2 < 320) || (left_mean != -1 && std::abs(left_mean - x_mean) < 80) || (left_mean == -1 && x2 < 320))) {
           left_line_x_sum += (float)(x1 + x2) * 0.5;
           left_line_index.push_back(i);
       } else if (
-          (right_mean == -2 || (right_mean != -1 && std::abs(right_mean - x_mean) < 80) || (right_mean == -1 && x1 > 320))) {
+          ((right_mean == -2 && x1 > 320) || (right_mean != -1 && std::abs(right_mean - x_mean) < 80) || (right_mean == -1 && x1 > 320))) {
           right_line_x_sum += (float)(x1 + x2) * 0.5;
           right_line_index.push_back(i);
       }
-      */
+     */ 
     }
+
   }
 
   if (left_mean == -1) {
