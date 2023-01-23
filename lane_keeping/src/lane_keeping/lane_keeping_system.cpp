@@ -295,6 +295,12 @@ bool LaneKeepingSystem::traffic_sign_recognition()
   int width = box_xmax - box_xmin;
   int height = box_ymax - box_ymin;
 
+  if (width < 10 || height < 10)
+  {
+    std::cout << "Invalid bbox size" << std::endl;
+    return;
+  }
+
   cv::Mat traffic_light = frame_(cv::Range(box_ymin, box_ymax), cv::Range(box_xmin, box_xmax));
 
   cv::Mat traffic_light_upside = traffic_light(cv::Rect(cv::Point(0, 0), cv::Point(width-1, height/3)));
@@ -324,17 +330,17 @@ bool LaneKeepingSystem::traffic_sign_recognition()
     return false;
   }
 
-  cv::Mat non_target;
+  cv::Mat target;
 
   if (value_upside > value_downside)
   {
 	  std::cout << "upside is brighter" << std::endl;
-    non_target = hsv_upside_split[0];
+    target = hsv_upside_split[0];
   }
   else
   {
 	  std::cout << "downside is brighter" << std::endl;
-    non_target = hsv_downside_split[0];
+    target = hsv_downside_split[0];
   }
 
 
@@ -342,8 +348,8 @@ bool LaneKeepingSystem::traffic_sign_recognition()
   cv::Scalar red_lower(140), red_upper(180);
   cv::Scalar green_lower(50), green_upper(90);
 
-  cv::inRange(non_target, red_lower, red_upper, red_mask);
-  cv::inRange(non_target, green_lower, green_upper, green_mask);
+  cv::inRange(target, red_lower, red_upper, red_mask);
+  cv::inRange(target, green_lower, green_upper, green_mask);
 
   int red_pixels = cv::countNonZero(red_mask);
   int green_pixels = cv::countNonZero(green_mask);
