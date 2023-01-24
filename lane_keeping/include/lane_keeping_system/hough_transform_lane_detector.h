@@ -82,6 +82,8 @@ private:
   int pre_right[10] = {640, };
   int left_mean = -1;
   int right_mean = -1;
+  int p_lpos = 0;
+  int p_rpos = 640;
 
   const int lSampleSize_ = 10;
   const int rSampleSize_ = 10;

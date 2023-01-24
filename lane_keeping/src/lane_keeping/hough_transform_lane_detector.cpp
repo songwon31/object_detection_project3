@@ -172,12 +172,10 @@ HoughTransformLaneDetector::divideLines(const std::vector<cv::Vec4i> &lines) {
     }
     else
     {
-      if (slope < 0 &&
-        (left_mean == -2 || (left_mean != -1 && std::abs(left_mean - x_mean) < 50))) {
+      if (slope < 0 && std::abs(left_mean - x_mean) < 50) {
         left_line_x_sum += (float)(x1 + x2) * 0.5;
         left_line_index.push_back(i);
-      } else if (0 < slope &&
-        (right_mean == -2 || (right_mean != -1 && std::abs(right_mean - x_mean) < 50))) {
+      } else if (0 < slope && std::abs(right_mean - x_mean) < 50) {
         right_line_x_sum += (float)(x1 + x2) * 0.5;
         right_line_index.push_back(i);
       }
@@ -266,18 +264,20 @@ std::pair<int, int> HoughTransformLaneDetector::getLanePosition(
                   hough_min_line_length_,
                   hough_max_line_gap_);
   if (all_lines.size() == 0) {
-    return std::pair<int, int>(0,image_width_);
+    clearSample();
+    return std::pair<int, int>(p_lpos,p_rpos);
   }
 
   std::vector<int> left_line_index, right_line_index;
-  std::tie(left_line_index, right_line_index) =
-    std::move(divideLines(all_lines));
+  std::tie(left_line_index, right_line_index) = std::move(divideLines(all_lines));
 
   int lpos = get_line_pos(all_lines, left_line_index, kLeftLane);
   int rpos = get_line_pos(all_lines, right_line_index, kRightLane);
 
   if (lpos == 0 && rpos == image_width_) {
     clearSample();
+    lpos = p_lpos;
+    rpos = p_rpos;
   } else {
     addLSample(lpos);
     left_mean = getLWeightedMovingAverage();
@@ -290,6 +290,8 @@ std::pair<int, int> HoughTransformLaneDetector::getLanePosition(
     draw_lines(all_lines, left_line_index, right_line_index);
   }
 
+  p_lpos = lpos;
+  r_rpos = rpos;
   return std::pair<int, int>(lpos, rpos);
 }
 
@@ -297,8 +299,8 @@ void HoughTransformLaneDetector::clearSample()
 {
   l_samples_.clear();
   r_samples_.clear();
-  left_mean = -2;
-  right_mean = -2;
+  left_mean = -1;
+  right_mean = -1;
 }
 
 void HoughTransformLaneDetector::draw_lines(

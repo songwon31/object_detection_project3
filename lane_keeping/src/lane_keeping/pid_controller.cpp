@@ -36,8 +36,8 @@ float PID::getControlOutput(int error) {
   float float_type_error = (float)error;
   d_error_ = float_type_error - p_error_;
   p_error_ = float_type_error;
-  /*
-  if (error = 0)
+  
+  if (error == 0)
   {
     i_error_ = 0;
   }
@@ -45,7 +45,7 @@ float PID::getControlOutput(int error) {
   {
     i_error_ += float_type_error;
   }
-  */
+  
   i_error_ += float_type_error;
   if (i_error_ > 50000)
   {
