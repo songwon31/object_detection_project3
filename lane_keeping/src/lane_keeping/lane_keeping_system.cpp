@@ -45,6 +45,7 @@ void LaneKeepingSystem::run()
   {}
   int lpos, rpos, error, ma_mpos;
   float steering_angle;
+  bool traffic_stop = false;
   ros::Rate rate(sleep_rate);
   while (ros::ok())
   {
@@ -55,53 +56,137 @@ void LaneKeepingSystem::run()
     }
 
     std::tie(lpos, rpos) = hough_transform_lane_detector_ptr_->getLanePosition(frame_);
+    /*
+    if (direction_id == 0)
+    {
+      // rpos = std::min(lpos + 400, 640);
+      if (lpos > 0)
+      {
+        rpos = std::min(lpos + 420, 640);
+      }
+      else
+      {
+        rpos -= 100;
+      }
+    }
+    else if (direction_id == 1)
+    {
+      // lpos = std::max(0, rpos - 400);
+      if (rpos < 640)
+      {
+        lpos = std::max(0, rpos - 420);
+      }
+      else
+      {
+        lpos += 100;
+      }
+      
+    }
+    */
+    
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //std::cout << "origin | lpos: " << lpos << " rpos: " << rpos << '\n';
     if (object_id == 0)
     {
-      rpos = std::min(lpos + 470, 640);
+      //direction_id = 0;
+      rpos = std::min(lpos + 420, 640);
     }
     else if (object_id == 1)
     {
-      lpos = std::max(0, rpos - 470);
+      //direction_id = 1;
+      lpos = std::max(0, rpos - 420);
     }
     else if (object_id == 2 || object_id == 3)
     {
-      drive_stop(6.0f);
-      continue;
-    }
-    else if (object_id == 4)
-    { 
-      bool is_red = traffic_sign_recognition();
-      if (is_red == true)
+      bool xycar_stopped = drive_stop(6.0f);
+      if (xycar_stopped == true)
       {
+        
         continue;
       }
     }
+    else if (object_id == 4)
+    { 
+
+      bool is_red = traffic_sign_recognition();
+      if (is_red == true)
+      {
+        ++red_light_cnt;
+      } 
+      else 
+      {
+        red_light_cnt = 0;
+        traffic_stop = false;
+      }
+
+      if (traffic_stop == true)
+      {
+        xycar_msgs::xycar_motor motor_msg;
+        motor_msg.angle = past_steering_angle;
+        motor_msg.speed = 0;
+        pub_.publish(motor_msg);
+        continue;
+      }
+
+      if (red_light_cnt > 4)
+      {
+        bool is_stop_line = false;
+         
+        cv::Mat stop_line = frame_(cv::Rect(220, 320, 200, 40));
+        cv::cvtColor(stop_line, stop_line, cv::COLOR_BGR2GRAY);
+        cv::threshold(stop_line, stop_line, 200, 255, cv::THRESH_BINARY);
+        std::cout <<(int)cv::mean(stop_line)[0] << std::endl;
+        if ((int)cv::mean(stop_line)[0] < 225) {
+          is_stop_line = true;
+        }
+       
+        if (is_stop_line == true)
+        {
+          ros::Rate rate(sleep_rate);
+          int cnt = 0;
+          while (static_cast<float>(cnt) < 2.0f) {
+            int lpos, rpos;
+            std::tie(lpos, rpos) = hough_transform_lane_detector_ptr_->getLanePosition(frame_);
+
+            ma_filter_ptr_->addSample((lpos + rpos) / 2);
+            ma_mpos = ma_filter_ptr_->getWeightedMovingAverage();
+
+            error = ma_mpos - frame_.cols / 2;
+            steering_angle = std::max(-(float)kXycarSteeringAngleLimit,
+                                      std::min(pid_ptr_->getControlOutput(error), (float)kXycarSteeringAngleLimit));
+
+            pid_ptr_->getAngle(steering_angle);
+
+
+            speed_control(steering_angle);
+            drive(steering_angle);
+
+            cnt++;
+            rate.sleep();
+          }
+
+          traffic_stop = true;
+        }
+
+      }
+    }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    if (lpos != 0 && rpos == 640)
-    {
-      rpos = std::min(lpos + 470, 640);
-    }
-    else if (lpos ==0 && rpos != 640)
-    {
-      lpos = std::max(0, rpos - 470);
-    }
-
     //std::cout << "change | lpos: " << lpos << " rpos: " << rpos << '\n';
 
     ma_filter_ptr_->addSample((lpos + rpos) / 2);
     ma_mpos = ma_filter_ptr_->getWeightedMovingAverage();
-    if (past_steering_angle < 0) 
+    /*
+    if (past_steering_angle < -20) 
     {
-	    ma_mpos -= 15;
+	    ma_mpos -= 30;
     }
-    else if (past_steering_angle > 0)
+    else if (past_steering_angle > 20)
     {
-	    ma_mpos += 15;
+	    ma_mpos += 30;
     }
+    */
     error = ma_mpos - frame_.cols / 2;
+
     steering_angle = std::max(-(float)kXycarSteeringAngleLimit,
                               std::min(pid_ptr_->getControlOutput(error), (float)kXycarSteeringAngleLimit));
 
@@ -119,23 +204,26 @@ void LaneKeepingSystem::imageCallback(const sensor_msgs::Image& msg)
 }
 
 void LaneKeepingSystem::detectionCallback(const yolov3_trt_ros::BoundingBoxes& msg) {
-  // TODO: Implement your code here
-  //* EXAMPLE CODE
-  if (msg.bounding_boxes.size() > 0)
-  {
-    std::vector<yolov3_trt_ros::BoundingBox> all_signs;
-    for (auto& box : msg.bounding_boxes) {
-      all_signs.push_back(box);
-      /*
-      std::cout << "Class ID: " << box.id << std::endl;
-      object_id = box.id;
-      box_xmin = box.xmin;
-      box_ymin = box.ymin;
-      box_xmax = box.xmax;
-      box_ymax = box.ymax;
-      */
+  
+  std::vector<yolov3_trt_ros::BoundingBox> all_signs;
+  for (auto& box : msg.bounding_boxes) {
+    if (box.id == 4 && (box.xmin*640/352 > 320))
+    {
+      continue;
     }
+    all_signs.push_back(box);
+    /*
+    std::cout << "Class ID: " << box.id << std::endl;
+    object_id = box.id;
+    box_xmin = box.xmin;
+    box_ymin = box.ymin;
+    box_xmax = box.xmax;
+    box_ymax = box.ymax;
+    */
+  }
 
+  if (all_signs.size() > 0)
+  {
     int focus_index = 0;
     int biggest_sign_size = (all_signs[0].xmax - all_signs[0].xmin) * (all_signs[0].ymax - all_signs[0].ymin);
     if (all_signs[0].id == 4)
@@ -198,7 +286,7 @@ void LaneKeepingSystem::drive_normal()
   drive(steering_angle);
 }
 
-void LaneKeepingSystem::drive_stop(float time)
+bool LaneKeepingSystem::drive_stop(float time)
 {
   ros::spinOnce();
   ros::Rate rate(sleep_rate);
@@ -210,8 +298,7 @@ void LaneKeepingSystem::drive_stop(float time)
     cv::threshold(stop_line, stop_line, 200, 255, cv::THRESH_BINARY);
     std::cout << (int)cv::mean(stop_line)[0] << std::endl;
     if ((int)cv::mean(stop_line)[0] > 230) {
-      drive_normal();
-      return;
+      return false;
     }
   } 
   else if (past_steering_angle > 0) 
@@ -221,8 +308,7 @@ void LaneKeepingSystem::drive_stop(float time)
     cv::threshold(stop_line, stop_line, 200, 255, cv::THRESH_BINARY);
     std::cout << (int)cv::mean(stop_line)[0] << std::endl;
     if ((int)cv::mean(stop_line)[0] > 230) {
-      drive_normal();
-      return;
+      return false;
     }
   }
   else
@@ -232,8 +318,7 @@ void LaneKeepingSystem::drive_stop(float time)
     cv::threshold(stop_line, stop_line, 200, 255, cv::THRESH_BINARY);
     std::cout << (int)cv::mean(stop_line)[0] << std::endl;
     if ((int)cv::mean(stop_line)[0] > 230) {
-      drive_normal();
-      return;
+      return false;
     }
   }
 
@@ -271,7 +356,7 @@ void LaneKeepingSystem::drive_stop(float time)
 
   while (static_cast<float>(cnt) < max_cnt) {
     xycar_msgs::xycar_motor motor_msg;
-    motor_msg.angle = 0;
+    motor_msg.angle = past_steering_angle;
     motor_msg.speed = 0;
     pub_.publish(motor_msg);
 
@@ -279,13 +364,15 @@ void LaneKeepingSystem::drive_stop(float time)
     rate.sleep();
   }
 
-  max_cnt = static_cast<float>(sleep_rate) * 2.0f;
+  max_cnt = static_cast<float>(sleep_rate) * 0.5f;
   cnt = 0;
   while (static_cast<float>(cnt) < max_cnt) {
     drive_normal();
     cnt++;
     rate.sleep();
   }
+
+  return true;
 
 }
 
@@ -295,11 +382,40 @@ bool LaneKeepingSystem::traffic_sign_recognition()
   int width = box_xmax - box_xmin;
   int height = box_ymax - box_ymin;
 
-  cv::Mat traffic_light = frame_(cv::Range(box_ymin, box_ymax), cv::Range(box_xmin, box_xmax));
+  if (width < 10 || height < 10)
+  {
+    std::cout << "Invalid bbox size" << std::endl;
+    return false;
+  }
 
+  if (box_xmax < 0 || box_xmax >= 640)
+  {
+    std::cout << "Invalid bbox" << std::endl;
+    return false;
+  }
+
+  if (box_xmin < 0 || box_xmin >= 640)
+  {
+    std::cout << "Invalid bbox" << std::endl;
+    return false;
+  }
+
+  if (box_ymax < 0 || box_ymax >= 480)
+  {
+    std::cout << "Invalid bbox" << std::endl;
+    return false;
+  }
+
+  if (box_ymin < 0 || box_ymin >= 480)
+  {
+    std::cout << "Invalid bbox" << std::endl;
+    return false;
+  }
+
+
+  cv::Mat traffic_light = frame_(cv::Range(box_ymin, box_ymax), cv::Range(box_xmin, box_xmax));
   cv::Mat traffic_light_upside = traffic_light(cv::Rect(cv::Point(0, 0), cv::Point(width-1, height/3)));
   cv::Mat traffic_light_downside = traffic_light(cv::Rect(cv::Point(0, height*2/3), cv::Point(width-1, height-1)));
-  
   cv::Mat hsv_upside, hsv_downside;
   std::vector<cv::Mat> hsv_upside_split, hsv_downside_split;
   
@@ -312,7 +428,6 @@ bool LaneKeepingSystem::traffic_sign_recognition()
   float value_upside, value_downside;
   int w = traffic_light_upside.size().width;
   int h = traffic_light_upside.size().height;
-
   value_upside = cv::mean(hsv_upside_split[2](cv::Rect(w / 4, h / 4, w / 2, h / 2)))[0];
   value_downside = cv::mean(hsv_downside_split[2](cv::Rect(w / 4, h / 4, w / 2, h / 2)))[0];
 
@@ -324,30 +439,27 @@ bool LaneKeepingSystem::traffic_sign_recognition()
     return false;
   }
 
-  cv::Mat non_target;
+  cv::Mat target;
 
   if (value_upside > value_downside)
   {
 	  std::cout << "upside is brighter" << std::endl;
-    non_target = hsv_upside_split[0];
+    target = hsv_upside_split[0];
   }
   else
   {
 	  std::cout << "downside is brighter" << std::endl;
-    non_target = hsv_downside_split[0];
+    target = hsv_downside_split[0];
   }
-
 
   cv::Mat red_mask, green_mask;
   cv::Scalar red_lower(140), red_upper(180);
   cv::Scalar green_lower(50), green_upper(90);
 
-  cv::inRange(non_target, red_lower, red_upper, red_mask);
-  cv::inRange(non_target, green_lower, green_upper, green_mask);
-
+  cv::inRange(target, red_lower, red_upper, red_mask);
+  cv::inRange(target, green_lower, green_upper, green_mask);
   int red_pixels = cv::countNonZero(red_mask);
   int green_pixels = cv::countNonZero(green_mask);
-
   std::cout << "red : " <<  red_pixels << " and green : " << green_pixels << std::endl;
   // edit here --------------------------------------------------------------------
   if(red_pixels < green_pixels)
@@ -360,11 +472,7 @@ bool LaneKeepingSystem::traffic_sign_recognition()
     std::string path = "/home/nvidia/green_light" + std::to_string(box_xmin) + ".png";
     cv::imwrite(path, img_);
 */
-    ++green_light_cnt;
-    if (red_light_cnt > 0)
-    {
-      red_light_cnt = 0;
-    }
+    return false;
   }
   else
   {
@@ -376,41 +484,8 @@ bool LaneKeepingSystem::traffic_sign_recognition()
     std::string path = "/home/nvidia/red_light" + std::to_string(box_xmin) + ".png";
     cv::imwrite(path, img_);
 */
-    ++red_light_cnt;
-    if (green_light_cnt > 0)
-    {
-      green_light_cnt = 0;
-    }
+    return true;
   }
-
-  if (red_light_cnt > 4)
-  {
-    cv::Mat stop_line = frame_(cv::Rect(310, 350, 20, 40));
-    cv::cvtColor(stop_line, stop_line, cv::COLOR_BGR2GRAY);
-    cv::threshold(stop_line, stop_line, 200, 255, cv::THRESH_BINARY);
-    // if no stop line just fllow lane
-    if ((int)cv::mean(stop_line)[0] > 230) {
-      return false;
-    }
-    else
-    {
-      xycar_msgs::xycar_motor motor_msg;
-
-      motor_msg.angle = past_steering_angle;
-      motor_msg.speed = 0;
-
-      past_steering_angle = motor_msg.angle;
-      past_speed = motor_msg.speed;
-
-      pub_.publish(motor_msg);
-      return true;
-    }
-  }
-  else
-  {
-    return false;
-  }
- 
 }
 
 void LaneKeepingSystem::speed_control(float steering_angle)
@@ -432,10 +507,12 @@ void LaneKeepingSystem::speed_control(float steering_angle)
 void LaneKeepingSystem::drive(float steering_angle)
 {
   xycar_msgs::xycar_motor motor_msg;
+  
   if (abs(steering_angle) < 10)
   {
     steering_angle = 0;
   }
+  
   motor_msg.angle = std::round(steering_angle);
   motor_msg.speed = std::round(xycar_speed_);
 

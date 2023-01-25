@@ -93,7 +93,7 @@ int HoughTransformLaneDetector::get_line_pos(
     if (direction == kLeftLane) {
       if (invaild_path_flag)
       {
-        pos = left_mean;
+        pos = p_lpos;
       }
       else
       {
@@ -102,7 +102,7 @@ int HoughTransformLaneDetector::get_line_pos(
     } else {
       if (invaild_path_flag)
       {
-        pos = right_mean;
+        pos = p_rpos;
       }
       else
       {
@@ -129,13 +129,6 @@ HoughTransformLaneDetector::divideLines(const std::vector<cv::Vec4i> &lines) {
   float right_line_x_sum = 0.0f;
   float left_x_avg, right_x_avg;
 
-  int max_left_x1;
-  int max_left_x2 = 0;
-  int max_left_index = -1;
-  int min_right_x2;
-  int min_right_x1 = 640;
-  int min_right_index = -1;
-
   for (int i = 0; i < lines_size; ++i) {
     x1 = lines[i][kHoughIndex::x1], y1 = lines[i][kHoughIndex::y1];
     x2 = lines[i][kHoughIndex::x2], y2 = lines[i][kHoughIndex::y2];
@@ -154,66 +147,39 @@ HoughTransformLaneDetector::divideLines(const std::vector<cv::Vec4i> &lines) {
 
     int x_mean = (x1+x2)/2;
 
-    if (left_mean == -1) 
-    {
-      if (slope < 0 && x2 < 320) {
-        if (x2 > max_left_x2) {
-          max_left_x2 = x2;
-          max_left_index = i;
-          max_left_x1 = x1;
-        }
-      } else if (slope > 0 && x1 > 320) {
-        if (x1 < min_right_x1) {
-          min_right_x1 = x1;
-          min_right_index = i;
-          min_right_x2=x2;
-        }
-      }
+  
+    if (slope < 0 && x2 < 320 && (left_mean == -1 || std::abs(left_mean - x_mean) < 50)) {
+      left_line_x_sum += (float)(x1 + x2) * 0.5;
+      left_line_index.push_back(i);
+    } else if (0 < slope && x1 > 320 && (right_mean == -1 || std::abs(right_mean - x_mean) < 50)) {
+      right_line_x_sum += (float)(x1 + x2) * 0.5;
+      right_line_index.push_back(i);
     }
-    else
-    {
-      if (slope < 0 &&
-        (left_mean == -2 || (left_mean != -1 && std::abs(left_mean - x_mean) < 50))) {
+  
+    /* 
+    if (((slope < 0) || (slope > 0 && x2 < 200)) &&
+        ((left_mean != -1 && std::abs(left_mean - x_mean) < 50) || (left_mean == -1 && x2 < 320))) {
         left_line_x_sum += (float)(x1 + x2) * 0.5;
         left_line_index.push_back(i);
-      } else if (0 < slope &&
-        (right_mean == -2 || (right_mean != -1 && std::abs(right_mean - x_mean) < 50))) {
+    } else if (((0 < slope && x1 > 200) || (slope < 0 && x1>280)) &&
+        ( (right_mean != -1 && std::abs(right_mean - x_mean) < 50) || (right_mean == -1 && x1 > 320))) {
         right_line_x_sum += (float)(x1 + x2) * 0.5;
         right_line_index.push_back(i);
-      }
-    
-     /* 
-      if (((slope < 0) || (slope > 0 && x2 < 200)) &&
-          ((left_mean != -1 && std::abs(left_mean - x_mean) < 50) || (left_mean == -1 && x2 < 320))) {
-          left_line_x_sum += (float)(x1 + x2) * 0.5;
-          left_line_index.push_back(i);
-      } else if (((0 < slope && x1 > 200) || (slope < 0 && x1>280)) &&
-          ( (right_mean != -1 && std::abs(right_mean - x_mean) < 50) || (right_mean == -1 && x1 > 320))) {
-          right_line_x_sum += (float)(x1 + x2) * 0.5;
-          right_line_index.push_back(i);
-      }
-      */
-      
-      /*
-      if (
-          ((left_mean == -2 && x2 < 320) || (left_mean != -1 && std::abs(left_mean - x_mean) < 80) || (left_mean == -1 && x2 < 320))) {
-          left_line_x_sum += (float)(x1 + x2) * 0.5;
-          left_line_index.push_back(i);
-      } else if (
-          ((right_mean == -2 && x1 > 320) || (right_mean != -1 && std::abs(right_mean - x_mean) < 80) || (right_mean == -1 && x1 > 320))) {
-          right_line_x_sum += (float)(x1 + x2) * 0.5;
-          right_line_index.push_back(i);
-      }
-     */ 
     }
-
-  }
-
-  if (left_mean == -1) {
-    left_line_x_sum += (float)(max_left_x1 + max_left_x2) * 0.5;
-    left_line_index.push_back(max_left_index);
-    right_line_x_sum += (float)(min_right_x1 + min_right_x2) * 0.5;
-    right_line_index.push_back(min_right_index);
+    */
+    
+    /*
+    if (
+        ((left_mean == -2 && x2 < 320) || (left_mean != -1 && std::abs(left_mean - x_mean) < 80) || (left_mean == -1 && x2 < 320))) {
+        left_line_x_sum += (float)(x1 + x2) * 0.5;
+        left_line_index.push_back(i);
+    } else if (
+        ((right_mean == -2 && x1 > 320) || (right_mean != -1 && std::abs(right_mean - x_mean) < 80) || (right_mean == -1 && x1 > 320))) {
+        right_line_x_sum += (float)(x1 + x2) * 0.5;
+        right_line_index.push_back(i);
+    }
+    */ 
+  
   }
 
   int left_lines_size = left_line_index.size();
@@ -245,13 +211,7 @@ std::pair<int, int> HoughTransformLaneDetector::getLanePosition(
             canny_image,
             canny_edge_low_threshold_,
             canny_edge_high_threshold_);
-   if (speed2 > 25) {
-    roi_start_height_ = 340;
-  } else if (speed2 > 20){
-    roi_start_height_ = 345;
-  } else{
-    roi_start_height_ = 360;
-  }
+  
   cv::Mat roi =
     canny_image(cv::Rect(0, roi_start_height_, image_width_, roi_height_));
   cv::dilate(roi, roi, cv::Mat());
@@ -266,18 +226,29 @@ std::pair<int, int> HoughTransformLaneDetector::getLanePosition(
                   hough_min_line_length_,
                   hough_max_line_gap_);
   if (all_lines.size() == 0) {
-    return std::pair<int, int>(0,image_width_);
+    clearSample();
+    return std::pair<int, int>(p_lpos,p_rpos);
   }
 
   std::vector<int> left_line_index, right_line_index;
-  std::tie(left_line_index, right_line_index) =
-    std::move(divideLines(all_lines));
+  std::tie(left_line_index, right_line_index) = std::move(divideLines(all_lines));
 
   int lpos = get_line_pos(all_lines, left_line_index, kLeftLane);
   int rpos = get_line_pos(all_lines, right_line_index, kRightLane);
 
+  if (lpos < 0 || lpos > 640)
+  {
+    lpos = p_lpos;
+  }
+  if (rpos < 0 || rpos > 640)
+  {
+    rpos = p_rpos;
+  }
+
   if (lpos == 0 && rpos == image_width_) {
     clearSample();
+    lpos = p_lpos;
+    rpos = p_rpos;
   } else {
     addLSample(lpos);
     left_mean = getLWeightedMovingAverage();
@@ -285,11 +256,8 @@ std::pair<int, int> HoughTransformLaneDetector::getLanePosition(
     right_mean =getRWeightedMovingAverage();
   }
 
-  if (debug_) {
-    image.copyTo(debug_frame_);
-    draw_lines(all_lines, left_line_index, right_line_index);
-  }
-
+  p_lpos = lpos;
+  p_rpos = rpos;
   return std::pair<int, int>(lpos, rpos);
 }
 
@@ -297,80 +265,8 @@ void HoughTransformLaneDetector::clearSample()
 {
   l_samples_.clear();
   r_samples_.clear();
-  left_mean = -2;
-  right_mean = -2;
-}
-
-void HoughTransformLaneDetector::draw_lines(
-  const std::vector<cv::Vec4i> &lines,
-  const std::vector<int> &left_line_index,
-  const std::vector<int> &right_line_index) {
-  cv::Point2i pt1, pt2;
-  cv::Scalar color;
-  for (int i = 0; i < left_line_index.size(); ++i) {
-    pt1 = cv::Point2i(
-      lines[left_line_index[i]][kHoughIndex::x1],
-      lines[left_line_index[i]][kHoughIndex::y1] + roi_start_height_);
-    pt2 = cv::Point2i(
-      lines[left_line_index[i]][kHoughIndex::x2],
-      lines[left_line_index[i]][kHoughIndex::y2] + roi_start_height_);
-    int r, g, b;
-    r = (float)std::rand() / RAND_MAX * std::numeric_limits<uint8_t>::max();
-    g = (float)std::rand() / RAND_MAX * std::numeric_limits<uint8_t>::max();
-    b = (float)std::rand() / RAND_MAX * std::numeric_limits<uint8_t>::max();
-    color = std::move(cv::Scalar(b, g, r));
-    cv::line(debug_frame_, pt1, pt2, color, kDebgLineWidth);
-  }
-  for (int i = 0; i < right_line_index.size(); ++i) {
-    pt1 = cv::Point2i(
-      lines[right_line_index[i]][kHoughIndex::x1],
-      lines[right_line_index[i]][kHoughIndex::y1] + roi_start_height_);
-    pt2 = cv::Point2i(
-      lines[right_line_index[i]][kHoughIndex::x2],
-      lines[right_line_index[i]][kHoughIndex::y2] + roi_start_height_);
-    int r, g, b;
-    r = (float)std::rand() / RAND_MAX * std::numeric_limits<uint8_t>::max();
-    g = (float)std::rand() / RAND_MAX * std::numeric_limits<uint8_t>::max();
-    b = (float)std::rand() / RAND_MAX * std::numeric_limits<uint8_t>::max();
-    color = std::move(cv::Scalar(b, g, r));
-    cv::line(debug_frame_, pt1, pt2, color, kDebgLineWidth);
-  }
-}
-
-void HoughTransformLaneDetector::draw_rectangles(int lpos,
-                                                 int rpos,
-                                                 int ma_pos) {
-  static cv::Scalar kCVRed(0, 0, 255);
-  static cv::Scalar kCVGreen(0, 255, 0);
-  static cv::Scalar kCVBlue(255, 0, 0);
-  cv::rectangle(debug_frame_,
-                cv::Point(lpos - kDebugRectangleHalfWidth,
-                          kDebugRectangleStartHeight + roi_start_height_),
-                cv::Point(lpos + kDebugRectangleHalfWidth,
-                          kDebugRectangleEndHeight + roi_start_height_),
-                kCVGreen,
-                kDebgLineWidth);
-  cv::rectangle(debug_frame_,
-                cv::Point(rpos - kDebugRectangleHalfWidth,
-                          kDebugRectangleStartHeight + roi_start_height_),
-                cv::Point(rpos + kDebugRectangleHalfWidth,
-                          kDebugRectangleEndHeight + roi_start_height_),
-                kCVGreen,
-                kDebgLineWidth);
-  cv::rectangle(debug_frame_,
-                cv::Point(ma_pos - kDebugRectangleHalfWidth,
-                          kDebugRectangleStartHeight + roi_start_height_),
-                cv::Point(ma_pos + kDebugRectangleHalfWidth,
-                          kDebugRectangleEndHeight + roi_start_height_),
-                kCVRed,
-                kDebgLineWidth);
-  cv::rectangle(debug_frame_,
-                cv::Point(image_width_ / 2 - kDebugRectangleHalfWidth,
-                          kDebugRectangleStartHeight + roi_start_height_),
-                cv::Point(image_width_ / 2 + kDebugRectangleHalfWidth,
-                          kDebugRectangleEndHeight + roi_start_height_),
-                kCVBlue,
-                kDebgLineWidth);
+  left_mean = -1;
+  right_mean = -1;
 }
 
 void HoughTransformLaneDetector::addLSample(int new_sample) {
@@ -385,22 +281,6 @@ void HoughTransformLaneDetector::addRSample(int new_sample) {
   if (r_samples_.size() > rSampleSize_) {
     r_samples_.pop_front();
   }
-}
-
-float HoughTransformLaneDetector::getLMovingAverage() {
-  int sum = 0, sample_size = l_samples_.size();
-  for (uint8_t i = 0; i < sample_size; ++i) {
-    sum += l_samples_[i];
-  }
-  return (float)sum / sample_size;
-}
-
-float HoughTransformLaneDetector::getRMovingAverage() {
-  int sum = 0, sample_size = r_samples_.size();
-  for (uint8_t i = 0; i < sample_size; ++i) {
-    sum += r_samples_[i];
-  }
-  return (float)sum / sample_size;
 }
 
 float HoughTransformLaneDetector::getLWeightedMovingAverage() {

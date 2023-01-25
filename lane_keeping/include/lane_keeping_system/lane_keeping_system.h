@@ -44,7 +44,7 @@ private:
   void detectionCallback(const yolov3_trt_ros::BoundingBoxes& msg);
   void drive_normal();
   void drive_left_or_right(std::string direction, float time);
-  void drive_stop(float time);
+  bool drive_stop(float time);
   bool traffic_sign_recognition();
 
   std::fstream outfile;
@@ -82,6 +82,8 @@ private:
 
   int sleep_rate = 12;
   int object_id = -1;
+
+  int direction_id = -1;
 
   int width_cfg = 352;
   int height_cfg = 352;
