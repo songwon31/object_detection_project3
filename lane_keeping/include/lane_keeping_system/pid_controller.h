@@ -11,8 +11,11 @@ public:
 
   float getAngle(float angle1);
 
+  float getDirectionId(int cur_direction_id);
+
 private:
   float angle;
+  int direction_id;
   float p_gain_;
   float i_gain_;
   float d_gain_;

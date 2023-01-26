@@ -125,7 +125,7 @@ class yolov3_trt(object):
                 continue
             
             if self.show_img:
-                cv2.imshow("show_trt",xycar_image)
+                # cv2.imshow("show_trt",xycar_image)
                 cv2.waitKey(1)
 
             image = self.preprocessor.process(xycar_image)
@@ -150,7 +150,10 @@ class yolov3_trt(object):
 
             # Draw the bounding boxes onto the original input image and save it as a PNG file
             # print(boxes, classes, scores)
+            
             if self.show_img:
+                pass
+            '''
                 img_show = np.array(np.transpose(image[0], (1,2,0)) * 255, dtype=np.uint8)
                 obj_detected_img = draw_bboxes(Image.fromarray(img_show), boxes, scores, classes, ALL_CATEGORIES)
                 obj_detected_img_np = np.array(obj_detected_img)
@@ -158,6 +161,7 @@ class yolov3_trt(object):
                 cv2.putText(show_img, "FPS:"+str(int(fps)), (10,50),cv2.FONT_HERSHEY_SIMPLEX, 1,(0,255,0),2,1)
                 cv2.imshow("result",show_img)
                 cv2.waitKey(1)
+            '''
 
     def _write_message(self, detection_results, boxes, scores, classes):
         """ populate output message with input header and bounding boxes information """

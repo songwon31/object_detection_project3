@@ -148,14 +148,13 @@ HoughTransformLaneDetector::divideLines(const std::vector<cv::Vec4i> &lines) {
     int x_mean = (x1+x2)/2;
 
   
-    if (slope < 0 && x2 < 320 && (left_mean == -1 || std::abs(left_mean - x_mean) < 50)) {
+    if (slope < 0 && x2 < 390 && (left_mean == -1 || std::abs(left_mean - x_mean) < 50)) {
       left_line_x_sum += (float)(x1 + x2) * 0.5;
       left_line_index.push_back(i);
-    } else if (0 < slope && x1 > 320 && (right_mean == -1 || std::abs(right_mean - x_mean) < 50)) {
+    } else if (0 < slope && x1 > 250 && (right_mean == -1 || std::abs(right_mean - x_mean) < 50)) {
       right_line_x_sum += (float)(x1 + x2) * 0.5;
       right_line_index.push_back(i);
     }
-<<<<<<< HEAD
   
     /* 
     if (((slope < 0) || (slope > 0 && x2 < 200)) &&
@@ -164,14 +163,6 @@ HoughTransformLaneDetector::divideLines(const std::vector<cv::Vec4i> &lines) {
         left_line_index.push_back(i);
     } else if (((0 < slope && x1 > 200) || (slope < 0 && x1>280)) &&
         ( (right_mean != -1 && std::abs(right_mean - x_mean) < 50) || (right_mean == -1 && x1 > 320))) {
-=======
-    else
-    {
-      if (slope < 0 && std::abs(left_mean - x_mean) < 50) {
-        left_line_x_sum += (float)(x1 + x2) * 0.5;
-        left_line_index.push_back(i);
-      } else if (0 < slope && std::abs(right_mean - x_mean) < 50) {
->>>>>>> 40e4cd2821e2311cef0b408c43ee99fb5e5e16f2
         right_line_x_sum += (float)(x1 + x2) * 0.5;
         right_line_index.push_back(i);
     }
@@ -265,18 +256,8 @@ std::pair<int, int> HoughTransformLaneDetector::getLanePosition(
     right_mean =getRWeightedMovingAverage();
   }
 
-<<<<<<< HEAD
   p_lpos = lpos;
   p_rpos = rpos;
-=======
-  if (debug_) {
-    image.copyTo(debug_frame_);
-    draw_lines(all_lines, left_line_index, right_line_index);
-  }
-
-  p_lpos = lpos;
-  r_rpos = rpos;
->>>>>>> 40e4cd2821e2311cef0b408c43ee99fb5e5e16f2
   return std::pair<int, int>(lpos, rpos);
 }
 
@@ -286,81 +267,6 @@ void HoughTransformLaneDetector::clearSample()
   r_samples_.clear();
   left_mean = -1;
   right_mean = -1;
-<<<<<<< HEAD
-=======
-}
-
-void HoughTransformLaneDetector::draw_lines(
-  const std::vector<cv::Vec4i> &lines,
-  const std::vector<int> &left_line_index,
-  const std::vector<int> &right_line_index) {
-  cv::Point2i pt1, pt2;
-  cv::Scalar color;
-  for (int i = 0; i < left_line_index.size(); ++i) {
-    pt1 = cv::Point2i(
-      lines[left_line_index[i]][kHoughIndex::x1],
-      lines[left_line_index[i]][kHoughIndex::y1] + roi_start_height_);
-    pt2 = cv::Point2i(
-      lines[left_line_index[i]][kHoughIndex::x2],
-      lines[left_line_index[i]][kHoughIndex::y2] + roi_start_height_);
-    int r, g, b;
-    r = (float)std::rand() / RAND_MAX * std::numeric_limits<uint8_t>::max();
-    g = (float)std::rand() / RAND_MAX * std::numeric_limits<uint8_t>::max();
-    b = (float)std::rand() / RAND_MAX * std::numeric_limits<uint8_t>::max();
-    color = std::move(cv::Scalar(b, g, r));
-    cv::line(debug_frame_, pt1, pt2, color, kDebgLineWidth);
-  }
-  for (int i = 0; i < right_line_index.size(); ++i) {
-    pt1 = cv::Point2i(
-      lines[right_line_index[i]][kHoughIndex::x1],
-      lines[right_line_index[i]][kHoughIndex::y1] + roi_start_height_);
-    pt2 = cv::Point2i(
-      lines[right_line_index[i]][kHoughIndex::x2],
-      lines[right_line_index[i]][kHoughIndex::y2] + roi_start_height_);
-    int r, g, b;
-    r = (float)std::rand() / RAND_MAX * std::numeric_limits<uint8_t>::max();
-    g = (float)std::rand() / RAND_MAX * std::numeric_limits<uint8_t>::max();
-    b = (float)std::rand() / RAND_MAX * std::numeric_limits<uint8_t>::max();
-    color = std::move(cv::Scalar(b, g, r));
-    cv::line(debug_frame_, pt1, pt2, color, kDebgLineWidth);
-  }
-}
-
-void HoughTransformLaneDetector::draw_rectangles(int lpos,
-                                                 int rpos,
-                                                 int ma_pos) {
-  static cv::Scalar kCVRed(0, 0, 255);
-  static cv::Scalar kCVGreen(0, 255, 0);
-  static cv::Scalar kCVBlue(255, 0, 0);
-  cv::rectangle(debug_frame_,
-                cv::Point(lpos - kDebugRectangleHalfWidth,
-                          kDebugRectangleStartHeight + roi_start_height_),
-                cv::Point(lpos + kDebugRectangleHalfWidth,
-                          kDebugRectangleEndHeight + roi_start_height_),
-                kCVGreen,
-                kDebgLineWidth);
-  cv::rectangle(debug_frame_,
-                cv::Point(rpos - kDebugRectangleHalfWidth,
-                          kDebugRectangleStartHeight + roi_start_height_),
-                cv::Point(rpos + kDebugRectangleHalfWidth,
-                          kDebugRectangleEndHeight + roi_start_height_),
-                kCVGreen,
-                kDebgLineWidth);
-  cv::rectangle(debug_frame_,
-                cv::Point(ma_pos - kDebugRectangleHalfWidth,
-                          kDebugRectangleStartHeight + roi_start_height_),
-                cv::Point(ma_pos + kDebugRectangleHalfWidth,
-                          kDebugRectangleEndHeight + roi_start_height_),
-                kCVRed,
-                kDebgLineWidth);
-  cv::rectangle(debug_frame_,
-                cv::Point(image_width_ / 2 - kDebugRectangleHalfWidth,
-                          kDebugRectangleStartHeight + roi_start_height_),
-                cv::Point(image_width_ / 2 + kDebugRectangleHalfWidth,
-                          kDebugRectangleEndHeight + roi_start_height_),
-                kCVBlue,
-                kDebgLineWidth);
->>>>>>> 40e4cd2821e2311cef0b408c43ee99fb5e5e16f2
 }
 
 void HoughTransformLaneDetector::addLSample(int new_sample) {

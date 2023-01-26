@@ -64,6 +64,9 @@ private:
   ros::Publisher pub_;
   ros::Subscriber image_sub_;
   ros::Subscriber detection_sub_;
+
+  ros::Time sign_detected_time;
+
   std::string pub_topic_name_;
   std::string sub_topic_name_;
   int queue_size_;
