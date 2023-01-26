@@ -49,7 +49,11 @@ float PID::getControlOutput(int error) {
     i_error_ += float_type_error;
   }
   
+<<<<<<< HEAD
   // i_error_ += float_type_error;
+=======
+  i_error_ += float_type_error;
+>>>>>>> 40e4cd2821e2311cef0b408c43ee99fb5e5e16f2
   if (i_error_ > 50000)
   {
 	  i_error_ = 50000;

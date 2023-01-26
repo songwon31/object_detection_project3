@@ -101,7 +101,10 @@ void LaneKeepingSystem::run()
       bool xycar_stopped = drive_stop(6.0f);
       if (xycar_stopped == true)
       {
+<<<<<<< HEAD
         
+=======
+>>>>>>> 40e4cd2821e2311cef0b408c43ee99fb5e5e16f2
         continue;
       }
     }
@@ -112,6 +115,7 @@ void LaneKeepingSystem::run()
       if (is_red == true)
       {
         ++red_light_cnt;
+<<<<<<< HEAD
       } 
       else 
       {
@@ -126,10 +130,15 @@ void LaneKeepingSystem::run()
         motor_msg.speed = 0;
         pub_.publish(motor_msg);
         continue;
+=======
+      } else {
+        red_light_cnt = 0;
+>>>>>>> 40e4cd2821e2311cef0b408c43ee99fb5e5e16f2
       }
 
       if (red_light_cnt > 4)
       {
+<<<<<<< HEAD
         bool is_stop_line = false;
          
         cv::Mat stop_line = frame_(cv::Rect(220, 320, 200, 40));
@@ -168,6 +177,14 @@ void LaneKeepingSystem::run()
           traffic_stop = true;
         }
 
+=======
+        bool xycar_stopped = drive_stop(6.0f);
+        if (xycar_stopped == true)
+        {
+          red_light_cnt = 0;
+          continue;
+        }
+>>>>>>> 40e4cd2821e2311cef0b408c43ee99fb5e5e16f2
       }
     }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -176,7 +193,11 @@ void LaneKeepingSystem::run()
     ma_filter_ptr_->addSample((lpos + rpos) / 2);
     ma_mpos = ma_filter_ptr_->getWeightedMovingAverage();
     /*
+<<<<<<< HEAD
     if (past_steering_angle < -20) 
+=======
+    if (past_steering_angle < 0) 
+>>>>>>> 40e4cd2821e2311cef0b408c43ee99fb5e5e16f2
     {
 	    ma_mpos -= 30;
     }
@@ -388,6 +409,7 @@ bool LaneKeepingSystem::traffic_sign_recognition()
     return false;
   }
 
+<<<<<<< HEAD
   if (box_xmax < 0 || box_xmax >= 640)
   {
     std::cout << "Invalid bbox" << std::endl;
@@ -411,6 +433,9 @@ bool LaneKeepingSystem::traffic_sign_recognition()
     std::cout << "Invalid bbox" << std::endl;
     return false;
   }
+=======
+  cv::Mat traffic_light = frame_(cv::Range(box_ymin, box_ymax), cv::Range(box_xmin, box_xmax));
+>>>>>>> 40e4cd2821e2311cef0b408c43ee99fb5e5e16f2
 
 
   cv::Mat traffic_light = frame_(cv::Range(box_ymin, box_ymax), cv::Range(box_xmin, box_xmax));
@@ -458,6 +483,10 @@ bool LaneKeepingSystem::traffic_sign_recognition()
 
   cv::inRange(target, red_lower, red_upper, red_mask);
   cv::inRange(target, green_lower, green_upper, green_mask);
+<<<<<<< HEAD
+=======
+
+>>>>>>> 40e4cd2821e2311cef0b408c43ee99fb5e5e16f2
   int red_pixels = cv::countNonZero(red_mask);
   int green_pixels = cv::countNonZero(green_mask);
   std::cout << "red : " <<  red_pixels << " and green : " << green_pixels << std::endl;
