@@ -164,19 +164,19 @@ class ImgAug(object):
             image=img,
             bounding_boxes=bounding_boxes)
 
-        if len(self.augmentations.find_augmenters_by_name('fliplr_tstl')) != 0 and len(bounding_boxes) != 0:
-            augmented_box = bounding_boxes[0]
-            if origin_box.x1 != augmented_box.x1 or origin_box.x2 != augmented_box.x2:
-                use_flip = True
-            else:
-                use_flip = False
+        # if len(self.augmentations.find_augmenters_by_name('fliplr_tstl')) != 0 and len(bounding_boxes) != 0:
+        #     augmented_box = bounding_boxes[0]
+        #     if origin_box.x1 != augmented_box.x1 or origin_box.x2 != augmented_box.x2:
+        #         use_flip = True
+        #     else:
+        #         use_flip = False
 
-            if use_flip:
-                for box_idx, box in enumerate(bounding_boxes):
-                    if box.label == 0:
-                        bounding_boxes[box_idx].label = 1
-                    elif box.label == 1:
-                        bounding_boxes[box_idx].label = 0
+        #     if use_flip:
+        #         for box_idx, box in enumerate(bounding_boxes):
+        #             if box.label == 0:
+        #                 bounding_boxes[box_idx].label = 1
+        #             elif box.label == 1:
+        #                 bounding_boxes[box_idx].label = 0
         
         # Clip out of image boxes
         bounding_boxes = bounding_boxes.remove_out_of_image_fraction(0.4)
